@@ -125,6 +125,7 @@ body.tc #prompt, body.tc:not(.inmg) .think, body.tc:not(.inmg) .toast { pointer-
 @media (prefers-reduced-motion: reduce) { .quest, .quest.flash { animation: none; } }
 
 /* level banner and level meter */
+body.inrhythm .quest { display: none; } /* rhythm games: the strip is at the top, its instruction sits under it */
 .lvlb { position: fixed; z-index: 4; left: 50%; top: 22vh; transform: translateX(-50%); pointer-events: none; background: #3a2a3c; color: #fff6e6; border: 0; border-radius: 0; padding: 5px 18px 7px; font-size: 27px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; text-align: center; white-space: nowrap; box-shadow: var(--oll), var(--drop); opacity: 0; }
 .lvlb[hidden] { display: none; }
 .lvlb small { display: block; font-size: 17px; opacity: .8; letter-spacing: .2em; }
@@ -249,7 +250,7 @@ body.tc .title .mhint { display: block; }
 .stp.on { background: var(--c, #e8707c); border-color: #fff6e6; }
 .stp.play { box-shadow: 0 calc(-1 * var(--px)) 0 0 #fff6e6, 0 var(--px) 0 0 #fff6e6, calc(-1 * var(--px)) 0 0 0 #fff6e6, var(--px) 0 0 0 #fff6e6; }
 .stp:focus-visible { outline: 3px solid #fff6e6; outline-offset: 1px; }
-.daw-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.daw-bar { display: flex; flex-wrap: wrap; gap: calc(5 * var(--px)); align-items: center; padding: calc(2 * var(--px)) calc(2 * var(--px)) 0; } /* 2 px outline+rim each + 1 free game pixel; room for the rims at the edges */
 .daw-bar .mb { width: auto; padding: 6px 14px 5px; background: #f1e6d4; }
 .daw-bar .mb[disabled] { opacity: .45; cursor: default; }
 .daw-bar .mb.prim { background: #c4565f; }
@@ -299,10 +300,20 @@ body.tc #arcov.cg .arcpad { display: grid; }
 .arcpn { font-size: 20px; letter-spacing: .06em; opacity: .85; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .arcfbox { position: relative; flex: 1 1 auto; }
 .arcframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #fff; }
+/* CRT look (Nov 10): scanlines, darker edges, a soft glow, a faint flicker; on the arcade screen and over every game played in the arcade.
+   The layer lets taps and clicks through (pointer-events: none). */
+.crt, .arcscr::after { pointer-events: none; }
+.crt { position: absolute; inset: 0; z-index: 2;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,.20) 0 1px, transparent 1px 3px), radial-gradient(ellipse at center, transparent 58%, rgba(0,0,0,.45) 100%);
+  box-shadow: inset 0 0 60px rgba(126,200,255,.10), inset 0 0 6px rgba(0,0,0,.6); animation: crtflick 4s infinite steps(1); }
+.arcscr::after { background: repeating-linear-gradient(0deg, rgba(0,0,0,.24) 0 1px, transparent 1px 3px), radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.5) 100%) !important; animation: crtflick 4s infinite steps(1); }
+@keyframes crtflick { 0%, 100% { opacity: 1; } 47% { opacity: .92; } 48% { opacity: 1; } 81% { opacity: .95; } 82% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .crt, .arcscr::after { animation: none; } }
 .arcfail { position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; font-size: 24px; color: #fff6e6; background: #0d0c18; }
 .arcfail[hidden] { display: none; }
 body.inarc .rotate { display: none !important; }
 .endc .rr.erow { display: flex; justify-content: center; }
+.endc .etime { font-size: clamp(19px, 4.4vw, 24px); letter-spacing: .06em; text-transform: uppercase; color: #3a7a55; margin-top: -2px; }
 /* the Klangerfinder mark: crisp pixels scaled up (title screen top, end card signature) */
 .kflogo { display: block; margin: 0 auto; image-rendering: pixelated; }
 .tlogo { width: 96px; height: 48px; margin-bottom: 14px; opacity: .92; }
@@ -489,7 +500,7 @@ body.inrace .toast { top: 9vh; }
 </div>
 <div id="arcplay" class="arcplay" hidden>
   <div class="arcbar"><button id="arcquit" class="chip" type="button"><span aria-hidden="true">&#9664;</span> <span data-i="arcQuit">Back to the arcade</span></button><span id="arcpn" class="arcpn"></span></div>
-  <div id="arcfbox" class="arcfbox"><div id="arcfail" class="arcfail" hidden data-i="arcFail"></div></div>
+  <div id="arcfbox" class="arcfbox"><div class="crt" aria-hidden="true"></div><div id="arcfail" class="arcfail" hidden data-i="arcFail"></div></div>
 </div>
 <div id="rscore" class="ov endc rscore" hidden>
   <div class="card" role="dialog" aria-modal="true" aria-labelledby="rsT">
@@ -504,6 +515,7 @@ body.inrace .toast { top: 9vh; }
 <div id="endc" class="ov endc" hidden>
   <div class="card" role="dialog" aria-modal="true">
     <div class="big" data-i="eText"></div>
+    <div class="etime" id="etime" hidden></div>
     <div class="the" data-i="eEnd">The End</div>
     <canvas id="elogo" class="kflogo elogo" width="28" height="16" role="img" aria-label="Klangerfinder"></canvas>
     <div class="rr erow"><button id="ekeep" class="mb" type="button" data-i="eKeep">Keep exploring</button></div>
@@ -1245,6 +1257,7 @@ document.addEventListener('contextmenu', e => { if (touchMode) e.preventDefault(
 function padCtx() {
   if (story.cut || (typeof dlg !== 'undefined' && dlg.open)) return 'enter'; // cutscene or a speech bubble: the ENTER button to go on
   const m = story.mg; if (!m) return 'walk';
+  if (typeof RH !== 'undefined' && RH) return 'dpad'; // a rhythm recording: the four arrow buttons
   if (m.rc) return 'race'; if (m.hj) return 'lr'; if (m.rw) return 'dpad';
   if (m.mz) return 'race'; // the maze: the joystick in 4 directions, no action buttons
   if (m.tg) return m.phase === 'top' ? 'lr' : 'station';
@@ -2221,8 +2234,7 @@ const SCENES = {
   phone: [
     Ln(null, 'Your phone is ringing. It is Ari.', 'Dein Handy klingelt. Es ist Ari.'),
     Ln('ariV', 'Have you collected all the sounds?', 'Hast du alle Klänge gesammelt?'),
-    Ln('ariV', 'Great! Our servers are back! Please come back to the office as fast as you can and finish the song in the studio!', 'Super! Unsere Server laufen wieder! Komm bitte so schnell du kannst zurück ins Büro und mach den Song im Studio fertig!'),
-    Ln(null, 'You jump into the car and put your foot down.', 'Du springst ins Auto und gibst Gas.')
+    Ln('ariV', 'Great! Our servers are back! Please come back to the office as fast as you can and finish the song in the studio!', 'Super! Unsere Server laufen wieder! Komm bitte so schnell du kannst zurück ins Büro und mach den Song im Studio fertig!')
   ],
   after: [
     Ln('florian', 'Santa just called me: We saved Christmas!!', 'Der Weihnachtsmann hat mich gerade angerufen: Wir haben Weihnachten gerettet!!'),
@@ -3051,6 +3063,7 @@ function startRecord(id, it) {
   story.recording = { id, t: 0, dur: s.dur, nt: 0, q, replay: !!replay };
   $('rec').hidden = !!replay; $('recb').style.width = '0%'; $('rect').textContent = 'REC · ' + tr(s.lab);
   tone(520, 0.05, 'square', 0.04); tone(780, 0.07, 'square', 0.04, 0.06);
+  if (story.mg && RH_SONGS[id] && rhStart(id)) { story.recording.dur = 1e9; return; } // church bells, the bird, the station: played as an arrow rhythm game (part_n.js)
   if (!(story.mg && id === 'trumpet')) playSrc(id);
 }
 function finishRecord() {
@@ -3074,7 +3087,10 @@ function ringPhone() {
   story.callT2 = 1.9;
 }
 function startCall() {
-  say(SCENES.phone, () => { story.busy = false; story.stage = 8.5; qSig = '#'; story.fadeDir = 1; story.fadeCb = () => { story.mg = null; rcStart(); }; });
+  say(SCENES.phone, () => { // then an instruction (a text, not a speech bubble), and off to the car
+    story.busy = true; story.stage = 8.5; qSig = '#'; toast(tr({ en: 'You jump into the car and put your foot down.', de: 'Du springst ins Auto und gibst Gas.' }), 2.4);
+    setTimeout(() => { story.busy = false; story.fadeDir = 1; story.fadeCb = () => { story.mg = null; rcStart(); }; }, 1600);
+  });
 }
 
 /* ---------- after the race: the car arrives home, you get out and walk up past the hens to the office ----------
@@ -3297,7 +3313,9 @@ function showTitle() {
   const sn = $('snow'); if (!sn.children.length) for (let i = 0; i < 36; i++) { const f = document.createElement('i'); f.style.left = (i * 97 % 100) + '%'; f.style.animationDuration = (6 + (i * 7) % 9) + 's'; f.style.animationDelay = '-' + ((i * 5) % 11) + 's'; f.style.width = f.style.height = (2 + (i % 3) * 2) + 'px'; sn.appendChild(f); }
   focusSoon($('tplay'));
 }
+let runT0 = 0, runTime = null; // how long it took to save Christmas: from Play to the end card (Nov 10)
 function startGame() {
+  if (!runT0) runT0 = performance.now();
   acx(); document.body.classList.remove('intitle'); $('title').hidden = true; setOv(null); story.started = true; prev = performance.now();
   tone(523.25, 0.12, 'triangle', 0.06); tone(659.25, 0.12, 'triangle', 0.06, 0.1); tone(783.99, 0.2, 'triangle', 0.06, 0.2);
 }
@@ -3436,7 +3454,17 @@ function startAfter() {
 function startEnding() {
   story.end = { t: 0, card: false, h: 1 }; story.stage = 11; qSig = '#';
 }
-function showEnd() { $('endc').hidden = false; setOv('end'); focusSoon($('ekeep')); }
+function runTimeText(sec) {
+  const m = Math.floor(sec / 60), s = Math.floor(sec % 60), de = lang === 'de';
+  const mm = de ? m + (m === 1 ? ' Minute' : ' Minuten') : m + (m === 1 ? ' minute' : ' minutes'), ss = de ? s + (s === 1 ? ' Sekunde' : ' Sekunden') : s + (s === 1 ? ' second' : ' seconds');
+  const t = m ? mm + (de ? ' und ' : ' and ') + ss : ss;
+  return de ? 'Du hast Weihnachten in ' + t + ' gerettet' : 'You saved Christmas in ' + t;
+}
+function showEnd() {
+  if (runTime === null && runT0) runTime = (performance.now() - runT0) / 1000; // the clock stops when the message appears
+  const el = $('etime'); el.hidden = runTime === null; if (runTime !== null) el.textContent = runTimeText(runTime);
+  $('endc').hidden = false; setOv('end'); focusSoon($('ekeep'));
+}
 
 /* ---------- things you can use, and the per-frame logic of all of it ---------- */
 function useExtra(it) {
@@ -3897,7 +3925,7 @@ function mgUpdate(dt) {
   if (m.phase === 'find') {
     m.ft += dt; m.vx = 0; m.vy = Math.max(-300, m.vy - MG_GRAV * dt); mgBox(m, dt, 5, 20); mgCam(m);
     if (m.ft > 0.55 && !m.fgot) { m.fgot = true; tone(784, 0.1, 'triangle', 0.05); tone(1047, 0.1, 'triangle', 0.05, 0.1); tone(1319, 0.25, 'triangle', 0.05, 0.2); }
-    if (m.ft > 1.4) { m.phase = 'rec'; story.busy = false; startRecord('trumpet'); if (story.recording) { story.recording.dur = 1e9; mgSongStart(); if (mgTouch()) toast(tr({ en: 'Tap the matching arrow when it reaches the gold frame!', de: 'Tipp den passenden Pfeil, wenn er den goldenen Rahmen erreicht!' }), 4.5); } } // phones hide the quest card while REC shows, so say it once here
+    if (m.ft > 1.4) { m.phase = 'rec'; story.busy = false; startRecord('trumpet'); if (story.recording) { story.recording.dur = 1e9; mgSongStart(); } } // phones hide the quest card while REC shows, so say it once here
     return;
   }
   if (m.phase === 'walk') {
@@ -4111,14 +4139,7 @@ function mgRender() {
     if (tx > -20 && tx < VW + 20) ctx.drawImage(t.held ? mgTrumpetR() : TRUMPET, tx - 7, ty - 4); }
   for (const q of m.notes) { ctx.globalAlpha = Math.min(1, q.life * 1.5); ctx.drawImage(NOTES[q.n], Math.round(q.x - cx) - 3, sy(q.y)); } ctx.globalAlpha = 1;
   if (story.gloom > 0.01) { ctx.globalAlpha = 0.22 * story.gloom; ctx.fillStyle = '#2c2468'; ctx.fillRect(0, 0, VW, VH); ctx.globalAlpha = 1; }
-  if (m.phase === 'rec' && m.song) {
-    const x0 = 80, y0 = 26, w = 160, h = 22, cy = y0 + 11;
-    ctx.globalAlpha = 0.85; ctx.fillStyle = '#17122e'; ctx.fillRect(x0, y0, w, h); ctx.globalAlpha = 1;
-    ctx.fillStyle = '#f6ecd9'; ctx.fillRect(x0, y0 - 1, w, 1); ctx.fillRect(x0, y0 + h, w, 1); ctx.fillRect(x0 - 1, y0, 1, h); ctx.fillRect(x0 + w, y0, 1, h);
-    ctx.fillStyle = m.flash > 0 ? '#fff6c0' : '#ffd45e'; ctx.fillRect(MG_ZX - 7, cy - 7, 14, 1); ctx.fillRect(MG_ZX - 7, cy + 6, 14, 1); ctx.fillRect(MG_ZX - 7, cy - 7, 1, 14); ctx.fillRect(MG_ZX + 6, cy - 7, 1, 14);
-    for (const n of m.song) { if (n.res === 1) continue; const x = Math.round(MG_ZX + (n.t - m.st) * MG_SPD); if (x < x0 + 6 || x > x0 + w - 6) continue; mgArrow(n.dir, x, cy, n.res === 2 ? '#7a5a6a' : MG_COL[n.dir]); }
-    m.song.forEach((n, i) => { ctx.fillStyle = n.res === 1 ? (n.q === 2 ? '#ffd45e' : '#9be37d') : n.res === 2 ? '#e8404a' : '#4a4468'; ctx.fillRect(Math.round(VW / 2) - 33 + i * 6, y0 + h + 4, 4, 4); });
-  }
+  if (m.phase === 'rec' && m.song) rhStrip(m.song, m.st, m.flash); // centred on any screen width (Nov 10; was fixed at x 80)
   // hearts and bells
   { const hx = Math.round(VW / 2) - 24; ctx.drawImage(S.heartOn, hx, 4); mgNum(m.hp, hx + 13, 6, '#f6ecd9'); ctx.drawImage(S.bell, hx + 26, 3); mgNum(String(m.bells).padStart(2, '0'), hx + 38, 6, '#f6ecd9'); }
   p.x = px0; p.y = py0; p.z = 0; p.vx = m.vx; p.vy = 0; p.moving = Math.abs(m.vx) > 3 && m.phase === 'play'; p.dir = m.dir; view.cx = 0; view.cy = 0;
@@ -4663,6 +4684,7 @@ function rwRender() {
   rwBell(cx, by - 1, m, beamK >= 1);
   for (const q of m.notes) { tgR(Math.round(cx + q.x), Math.round(by - 14 + q.y), 2, 3, '#ffe27a'); tgR(Math.round(cx + q.x) + 1, Math.round(by - 15 + q.y), 2, 1, '#ffe27a'); }
   if (story.fade > 0) { ctx.globalAlpha = Math.min(1, story.fade); ctx.fillStyle = INK; ctx.fillRect(0, 0, VW, VH); ctx.globalAlpha = 1; }
+  p.x = 34; p.y = VH - 18; p.z = 0; view.cx = 0; view.cy = 0; // no player in this scene: speech bubbles and Ari's phone sit at the lower left
 }
 // tap a ring to pick it; tap the picked ring again to turn it (left half = back, right half = forward)
 cv.addEventListener('pointerdown', e => {
@@ -4953,6 +4975,7 @@ function hjRender() {
   for (let k = 1; k * HJ_CP < HJ_GOAL; k++) tgR(hx - 1, hy1 - Math.round((k * HJ_CP / HJ_GOAL) * (hy1 - hy0)), 5, 1, '#ffd25a');
   tgR(hx - 1, hy1 - Math.round(pr * (hy1 - hy0)) - 1, 5, 3, '#f6ecd9'); tgR(hx - 2, hy0 - 3, 7, 3, '#4fa6e8');
   if (story.fade > 0) { ctx.globalAlpha = Math.min(1, story.fade); ctx.fillStyle = INK; hjFr(0, 0, VW, VH); ctx.globalAlpha = 1; }
+  p.x = px0; p.y = py0; p.z = 0; view.cx = 0; view.cy = 0; // speech bubbles and Ari's phone anchor on the player (screen coords)
 }
 function forestBoot() {
   if (!FOREST_ONLY) return;
@@ -5850,7 +5873,7 @@ ARCADE_GAMES.push(
     desc: { en: 'Five Christmas levels against the noise. Launch the Klangis!', de: 'Fünf Weihnachtslevel gegen das Rauschen. Schick die Klangis los!' } },
   { id: 'klanghaus', frame: 'klanghaus', name: { en: 'Klanghaus', de: 'Klanghaus' },
     desc: { en: 'A house full of sound, on a hillside, with hens. Walk, talk and explore.', de: 'Ein Haus voller Klang, am Hang, mit Hühnern. Laufen, reden, entdecken.' } },
-  { id: 'pong', frame: 'pong', name: { en: 'Pong', de: 'Pong' },
+  { id: 'pong', frame: 'pong', name: { en: 'Kling Klang Pong', de: 'Kling Klang Pong' },
     desc: { en: 'The classic, in Klangerfinder style. Keep the ball in play and outscore the other side.', de: 'Der Klassiker im Klangerfinder-Stil. Halt den Ball im Spiel und hol mehr Punkte.' } },
   { id: 'freekick', frame: 'freekick', name: { en: 'Free Kick', de: 'Freistoß' },
     desc: { en: 'Ten free kicks: aim, charge the shot and let go in the green zone.', de: 'Zehn Freistöße: zielen, Schuss aufladen und im grünen Bereich loslassen.' } }
@@ -6725,6 +6748,72 @@ function mzRender() {
   drawSnow();
   if (story.fade > 0) { ctx.globalAlpha = Math.min(1, story.fade); ctx.fillStyle = INK; ctx.fillRect(0, 0, VW, VH); ctx.globalAlpha = 1; }
 }
+/* ==========================================================================================
+   RHYTHM RECORDINGS (Nov 10): the arrow game from the market trumpet, also for the church bells, the bird at the top of the
+   tree and the sounds on the station roof. Same rules as the trumpet: press the arrow when it reaches the gold frame; a miss
+   means 'Once more!' (after 3 tries the tempo gets gentler). Hitting a note plays it on the place's own instrument.
+   startRecord() starts it for these ids inside a mission; finishing the tune ends the recording (R.dur = 0, the mission's
+   own recording tick then calls finishRecord). The strip is drawn centred at the top; the quest card is hidden meanwhile and
+   the instruction is shown under the strip during the count-in.
+   ========================================================================================== */
+const RH_D = ['left', 'up', 'down', 'right'];
+const RH_SONGS = {
+  // the church: 'rounds', the bell ringers' descending peal, then home again
+  rope: { notes: [[523, .3, 'left'], [494, .3, 'up'], [440, .3, 'down'], [392, .3, 'right'], [349, .3, 'left'], [330, .3, 'up'], [294, .3, 'down'], [262, .55, 'right'], [262, .3, 'left'], [392, .3, 'right'], [523, .8, 'up']],
+    play: (f, d) => bigBell(f / 2, 0.12, 0), miss: () => bigBell(98, 0.05, 0) },
+  // the bird: a little song of chirps
+  bird: { notes: [[1568, .22, 'up'], [1760, .22, 'up'], [2093, .4, 'right'], [1760, .22, 'down'], [1568, .22, 'left'], [1319, .4, 'down'], [1568, .22, 'up'], [2093, .22, 'right'], [2349, .6, 'up']],
+    play: (f, d) => { sweep(f, f * 1.25, Math.min(0.16, d * 0.7), 'sine', 0.05, 0); sweep(f * 1.25, f, 0.06, 'sine', 0.03, Math.min(0.16, d * 0.7)); }, miss: () => sweep(900, 600, 0.12, 'triangle', 0.03, 0) },
+  // the station roof: the station gong, the departure board flapping, a drill on the building site
+  hbf: { notes: [[659, .45, 'left', 'gong'], [523, .45, 'right', 'gong'], [392, .7, 'down', 'gong'], [0, .22, 'up', 'flap'], [0, .22, 'up', 'flap'], [0, .45, 'down', 'drill'], [0, .45, 'down', 'drill'], [523, .45, 'left', 'gong'], [784, .8, 'right', 'gong']],
+    play: (f, d, kind) => { if (kind === 'flap') { for (let i = 0; i < 5; i++) clack(i * 0.04, 0.07); } else if (kind === 'drill') { for (let i = 0; i < 3; i++) { thump(i * 0.07, 0.12); noiseHit(0.05, 0.05, 1800, 1, i * 0.07); } } else { tone(f, 0.9, 'triangle', 0.07); tone(f * 2, 0.5, 'sine', 0.02); } },
+    miss: () => tone(196, 0.12, 'sawtooth', 0.03) }
+};
+let RH = null; // { id, song, st, kp, flash, tries, retry, done }
+function rhStart(id) {
+  const S = RH_SONGS[id]; if (!S) return false;
+  RH = { id, S, tries: 0, kp: {} }; rhReset(); return true;
+}
+function rhReset() {
+  const sc = Math.min(3.2, MG_SLOW * Math.pow(1.35, Math.floor((RH.tries || 0) / 3)));
+  let t = 0; RH.song = RH.S.notes.map(([f, d, dir, kind]) => { const n = { t: t * sc, d: d * sc, f, dir, kind, res: 0, q: 0 }; t += d + 0.03; return n; });
+  RH.st = -1.5; RH.flash = 0; RH.retry = 0; for (const k of RH_D) RH.kp[k] = down(k);
+}
+function rhPress(k) {
+  let best = null; for (const n of RH.song) if (!n.res && Math.abs(RH.st - n.t) <= 0.3 && (!best || n.t < best.t)) best = n;
+  if (!best) return;
+  if (best.dir === k) { best.res = 1; best.q = Math.abs(RH.st - best.t) <= 0.09 ? 2 : 1; RH.flash = 0.25; RH.S.play(best.f, best.d, best.kind); }
+  else { best.res = 2; RH.S.miss(); }
+}
+function rhUpdate(dt) {
+  const R = story.recording; if (!RH) return;
+  if (!R || !story.mg) { RH = null; return; }
+  const prev = RH.st; RH.st += dt; RH.flash = Math.max(0, RH.flash - dt);
+  for (const c of [-1.2, -0.8, -0.4]) if (prev < c && RH.st >= c) tone(880, 0.05, 'square', 0.03);
+  for (const k of RH_D) { const dn = down(k); if (dn && !RH.kp[k]) rhPress(k); RH.kp[k] = dn; }
+  if (RH.retry > 0) { RH.retry -= dt; if (RH.retry <= 0) rhReset(); return; }
+  for (const n of RH.song) if (!n.res && RH.st > n.t + 0.3) { n.res = 2; RH.S.miss(); }
+  if (RH.song.some(n => n.res === 2)) { RH.tries++; RH.retry = 1.1; toast(tr({ en: 'Once more!', de: 'Noch einmal!' }), 1.1); return; }
+  const last = RH.song[RH.song.length - 1], end = last.t + last.d + 0.7;
+  R.t = 0; $('recb').style.width = Math.max(0, Math.min(100, (RH.st + 1.5) / (end + 1.5) * 100)) + '%';
+  if (RH.st > end) { RH = null; R.dur = 0; } // done: the mission's recording tick finishes the recording now
+}
+// the strip, centred at the top (shared by the trumpet game in the market)
+function rhStrip(song, st, flash) {
+  const w = 160, h = 22, x0 = Math.round((VW - w) / 2), y0 = 26, cy = y0 + 11, zx = x0 + 16;
+  ctx.globalAlpha = 0.85; ctx.fillStyle = '#17122e'; ctx.fillRect(x0, y0, w, h); ctx.globalAlpha = 1;
+  ctx.fillStyle = '#f6ecd9'; ctx.fillRect(x0, y0 - 1, w, 1); ctx.fillRect(x0, y0 + h, w, 1); ctx.fillRect(x0 - 1, y0, 1, h); ctx.fillRect(x0 + w, y0, 1, h);
+  ctx.fillStyle = flash > 0 ? '#fff6c0' : '#ffd45e'; ctx.fillRect(zx - 7, cy - 7, 14, 1); ctx.fillRect(zx - 7, cy + 6, 14, 1); ctx.fillRect(zx - 7, cy - 7, 1, 14); ctx.fillRect(zx + 6, cy - 7, 1, 14);
+  for (const n of song) { if (n.res === 1) continue; const x = Math.round(zx + (n.t - st) * MG_SPD); if (x < x0 + 6 || x > x0 + w - 6) continue; mgArrow(n.dir, x, cy, n.res === 2 ? '#7a5a6a' : MG_COL[n.dir]); }
+  const dw = song.length * 6 - 2, dx = Math.round(VW / 2 - dw / 2);
+  song.forEach((n, i) => { ctx.fillStyle = n.res === 1 ? (n.q === 2 ? '#ffd45e' : '#9be37d') : n.res === 2 ? '#e8404a' : '#4a4468'; ctx.fillRect(dx + i * 6, y0 + h + 4, 4, 4); });
+  if (st < 0) { // the instruction, under the strip during the count-in
+    const s = touchMode ? tr({ en: 'Tap the arrow when it reaches the frame', de: 'Tipp den Pfeil, wenn er den Rahmen erreicht' }) : tr({ en: 'Press the arrow when it reaches the frame', de: 'Drück den Pfeil, wenn er den Rahmen erreicht' });
+    const tw = arcTextW(s, 1), tx = Math.round((VW - tw) / 2), ty = y0 + h + 13;
+    ctx.fillStyle = 'rgba(13,12,24,.8)'; ctx.fillRect(tx - 4, ty - 3, tw + 8, 11); arcText(ctx, s, tx, ty, '#fff6e6', 1);
+  }
+}
+function rhRender() { if (RH && RH.song) rhStrip(RH.song, RH.st, RH.flash); }
 /* ---------- go ---------- */
 const PORT = window.matchMedia ? window.matchMedia('(pointer: coarse) and (orientation: portrait) and (max-width: 700px)') : null;
 enterMap('garden', maps.garden.start);
@@ -6753,9 +6842,10 @@ function frame(now) {
     document.body.classList.toggle('inrose', !!(story.mg && (story.mg.rw || story.mg.hj)));
     document.body.classList.toggle('inrace', !!(story.mg && story.mg.rc));
     if (story.mg && dlg.open && useEdge && !menuOpen && !ovOpen) { useEdge = false; advance(); } // ENTER goes on in speech bubbles inside mini-games too
-    if (story.mg) { if (!menuOpen && !ovOpen && !away) mgUpdate(dt); useEdge = false; if (story.mg) { mgRender(); setQuest(); } placePrompt(); placeDlg(); }
+    if (story.mg) { if (!menuOpen && !ovOpen && !away) { mgUpdate(dt); rhUpdate(dt); } useEdge = false; if (story.mg) { mgRender(); rhRender(); drawCallPhone(view.cx, view.cy); setQuest(); } placePrompt(); placeDlg(); }
     else { if (!menuOpen && !ovOpen && !away) update(dt);
     render(); placePrompt(); placeDlg(); }
+    document.body.classList.toggle('inrhythm', !!(RH || (story.mg && story.mg.song && story.mg.phase === 'rec'))); // the quest card makes room for the arrow strip
   } catch (err) { noteErr(err); prev = performance.now(); }
 }
 initUI();
